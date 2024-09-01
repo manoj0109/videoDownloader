@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Download Video</title>
+</head>
+<body>
+    <h1>Download Video</h1>
+    <form id="downloadForm">
+        <label for="url">Video URL:</label>
+        <input type="text" id="url" name="url" required><br><br>
+        <button type="button" onclick="downloadVideo()">Download</button>
+    </form>
+    <script>
+        function downloadVideo() {
+            var url = document.getElementById('url').value;
+
+            fetch('/download?url=' + encodeURIComponent(url))
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok.');
+                    }
+                    // Extract filename from the Content-Disposition header
+                    var contentDisposition = response.headers.get('Content-Disposition');
+                    // var filename = 'default_filename.mp4'; // Fallback filename
+                    var filename = response.headers.get('fileName');
+
+                    if (contentDisposition && contentDisposition.indexOf('filename=') !== -1) {
+                        var filenameMatch = contentDisposition.match(/filename="(.+?)"/);
+                        if (filenameMatch && filenameMatch[1]) {
+                            filename = filenameMatch[1];
+                        }
+                    }
+
+                    return response.blob().then(blob => {
+                        var link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = filename;
+                        link.click();
+                    });
+                })
+                .catch(error => console.error('There was a problem with the fetch operation:', error));
+        }
+    </script>
+</body>
+</html>
